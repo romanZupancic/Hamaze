@@ -52,18 +52,21 @@ demolishWall mazeGrid x y nx ny = sndReplacement
             (makeNewCell (info $ gridSelect mazeGrid x y) (x - nx) (y - ny))
         sndReplacement = replaceMaze fstReplacement nx ny
             (makeNewCell (info $ gridSelect fstReplacement nx ny) (nx - x) (ny - y))
-    
-generateMaze :: MazeGrid -> Int -> Int -> MazeGrid
-generateMaze mazeGrid x y =
-  foldr (connectCells) markedVisited neighbours
+
+generateMaze :: MazeGrid -> Int -> Int -> [Int] -> MazeGrid
+generateMaze mazeGrid x y neighbourOrder =
+  foldr (connectCells) markedVisited neighboursReordered
     where
         currCell = gridSelect mazeGrid x y
         markedVisited = replaceMaze mazeGrid x y ((info currCell) {visited = True})
-        neighbours = surroundingCoords x y (width mazeGrid, height mazeGrid)
+        (neighboursReordered, nxt) = let
+          neighbours = surroundingCoords x y (width mazeGrid, height mazeGrid)
+          (order, nx) = splitAt (length neighbours) neighbourOrder
+          in ((reorder neighbours order), nx)
         connectCells (ix,iy) mze = if visited . info $ gridSelect mze ix iy then
                                        mze
                                    else
-                                       generateMaze (demolishWall mze x y ix iy) ix iy
+                                       generateMaze (demolishWall mze x y ix iy) ix iy nxt
 
 replaceMaze :: MazeGrid -> Int -> Int -> MazeCell -> MazeGrid
 replaceMaze mze@Grid { contents = ctns } x y ele =
@@ -80,18 +83,29 @@ randomList gen range@(start, end) = value : randomList nextGen range
     where
         (value, nextGen) = uniformR (start, end) gen
 
-data MazeGraphics = MazeGraphics { gridCornerGraphic :: Char
-                                 , gridHorizWallGraphic :: Char
-                                 , gridVertiWallGraphic :: Char
+-- | Reorder items according to some weird algorithm that just kinda
+-- works. Don't rely on it for anything but wonky results
+reorder :: [a] -> [Int] -> [a]
+reorder items [] = items
+reorder items (x:xs) = (items !! extractIndex) : reorder remainingItems xs
+    where
+        extractIndex = x `mod` (length items)
+        remainingItems = [ele | (idx, ele) <- zip [0..] items, idx /= extractIndex]
+    
+data MazeGraphics = MazeGraphics { gridCornerGraphic :: String
+                                 , gridHorizWallGraphic :: String
+                                 , gridVertiWallGraphic :: String
+                                 , gridSpaceGraphic :: String
                                  } 
 
 defaultMazeGraphics :: MazeGraphics
-defaultMazeGraphics = MazeGraphics '#' '=' '|'
+defaultMazeGraphics = MazeGraphics "#" "===" "|" "   "
 
 drawMaze :: MazeGraphics -> MazeGrid -> [String]
 drawMaze MazeGraphics{ gridCornerGraphic = gcg
                      , gridHorizWallGraphic = ghwg
                      , gridVertiWallGraphic = gvwg
+                     , gridSpaceGraphic = gsg
                      } mazeGrid = foldr1 (++) $ map (drawRow . (map info)) (contents mazeGrid)
     where
         drawRow :: [MazeCell] -> [String]
@@ -101,13 +115,13 @@ drawMaze MazeGraphics{ gridCornerGraphic = gcg
                           , topWall = tw
                           , rightWall = rw
                           , bottomWall = bw
-                          } = [if tw then [gcg, ghwg, gcg] else [gcg, ' ', gcg],
-                                    (if lw then gvwg else ' ') : ' ' : (if rw then gvwg else ' ') : [],
-                                    if bw then [gcg, ghwg, gcg] else [gcg, ' ', gcg]]
+                          } = [if tw then gcg ++ ghwg ++ gcg else gcg ++ gsg ++ gcg,
+                               (if lw then gvwg else " ") ++ gsg ++ (if rw then gvwg else " "),
+                               if bw then gcg ++ ghwg ++ gcg else gcg ++ gsg ++ gcg]
 
 parallelConcat :: [[a]] -> [[a]] -> [[a]]
 parallelConcat (v:vs) (u:us) = (v ++ u) : parallelConcat vs us
 parallelConcat _ _ = []
 
 test :: IO ()
-test = putStr $ unlines (drawMaze defaultMazeGraphics $ generateMaze (generateMazeGrid 5 5) 0 0)
+test = putStr $ unlines (drawMaze defaultMazeGraphics $ generateMaze (generateMazeGrid 15 10) 0 0 (randomList (mkStdGen 6969) (0, 11))) 
