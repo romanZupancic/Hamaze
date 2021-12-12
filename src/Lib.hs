@@ -70,14 +70,13 @@ generateMaze mazeGrid x y neighbourOrder =
                                        generateMaze (demolishWall mze x y ix iy) ix iy nxt
 
 replaceMaze :: MazeGrid -> Int -> Int -> MazeCell -> MazeGrid
-replaceMaze mze@Grid { gridContents = ctns } x y ele =
-    mze { gridContents = [map (replacer x y) col | col <- ctns] }
+replaceMaze mze@Grid { gridContents = ctns } x y ele = mze { gridContents = newGrid}
     where
-        replacer tx ty cell@GridCell{cellX = cx, cellY = cy}
-            = if tx == cx && ty == cy then
-                  cell {info = ele}
-              else
-                  cell
+        newCell = (gridSelect mze x y) { info = ele }
+        (rowsBefore, rowsInAfter) = splitAt y ctns
+        (colsBefore, colsInAfter) = splitAt x (head $ rowsInAfter)
+        newRow = colsBefore ++ (newCell : (tail colsInAfter))
+        newGrid = rowsBefore ++ (newRow : (tail rowsInAfter))
 
 randomList :: StdGen -> (Int, Int) -> [Int]
 randomList gen range@(start, end) = value : randomList nextGen range
