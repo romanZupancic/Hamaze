@@ -18,10 +18,10 @@ data GridCell a = GridCell { cellX :: Int
                            }
     deriving Show
 
-data Grid a= Grid { width :: Int
-                   , height :: Int
-                   , contents :: [[GridCell a]]
-                   }
+data Grid a= Grid { gridWidth :: Int
+                  , gridHeight :: Int
+                  , gridContents :: [[GridCell a]]
+                  }
     deriving Show
 
 type MazeGrid = Grid MazeCell
@@ -32,7 +32,7 @@ generateMazeGrid x y = Grid x y [[defGridCell xv yv | xv <- [0..(x - 1)]] | yv <
         defGridCell cellx celly = GridCell cellx celly (MazeCell True True True True False)
 
 gridSelect :: Grid a -> Int -> Int -> GridCell a
-gridSelect grid x y = (contents grid) !! y !! x
+gridSelect grid x y = (gridContents grid) !! y !! x
 
 surroundingCoords :: Int -> Int -> (Int, Int) -> [(Int, Int)]
 surroundingCoords x y bounds = [(vx, y) | vx <- approvedX] ++ [(x, vy) | vy <- approvedY]
@@ -48,6 +48,7 @@ demolishWall mazeGrid x y nx ny = sndReplacement
             | dx < 0 = mzeCell {rightWall = False}
             | dy > 0 = mzeCell {topWall = False}
             | dy < 0 = mzeCell {bottomWall = False}
+            | otherwise = error "We are comparing cell locations of the same cell"
         fstReplacement = replaceMaze mazeGrid x y
             (makeNewCell (info $ gridSelect mazeGrid x y) (x - nx) (y - ny))
         sndReplacement = replaceMaze fstReplacement nx ny
@@ -60,7 +61,7 @@ generateMaze mazeGrid x y neighbourOrder =
         currCell = gridSelect mazeGrid x y
         markedVisited = replaceMaze mazeGrid x y ((info currCell) {visited = True})
         (neighboursReordered, nxt) = let
-          neighbours = surroundingCoords x y (width mazeGrid, height mazeGrid)
+          neighbours = surroundingCoords x y (gridWidth mazeGrid, gridHeight mazeGrid)
           (order, nx) = splitAt (length neighbours) neighbourOrder
           in ((reorder neighbours order), nx)
         connectCells (ix,iy) mze = if visited . info $ gridSelect mze ix iy then
@@ -69,8 +70,8 @@ generateMaze mazeGrid x y neighbourOrder =
                                        generateMaze (demolishWall mze x y ix iy) ix iy nxt
 
 replaceMaze :: MazeGrid -> Int -> Int -> MazeCell -> MazeGrid
-replaceMaze mze@Grid { contents = ctns } x y ele =
-    mze { contents = [map (replacer x y) col | col <- ctns] }
+replaceMaze mze@Grid { gridContents = ctns } x y ele =
+    mze { gridContents = [map (replacer x y) col | col <- ctns] }
     where
         replacer tx ty cell@GridCell{cellX = cx, cellY = cy}
             = if tx == cx && ty == cy then
@@ -106,7 +107,7 @@ drawMaze MazeGraphics{ gridCornerGraphic = gcg
                      , gridHorizWallGraphic = ghwg
                      , gridVertiWallGraphic = gvwg
                      , gridSpaceGraphic = gsg
-                     } mazeGrid = foldr1 (++) $ map (drawRow . (map info)) (contents mazeGrid)
+                     } mazeGrid = foldr1 (++) $ map (drawRow . (map info)) (gridContents mazeGrid)
     where
         drawRow :: [MazeCell] -> [String]
         drawRow row = foldr1 (parallelConcat) $ map (drawCell) row
@@ -123,5 +124,5 @@ parallelConcat :: [[a]] -> [[a]] -> [[a]]
 parallelConcat (v:vs) (u:us) = (v ++ u) : parallelConcat vs us
 parallelConcat _ _ = []
 
-test :: IO ()
-test = putStr $ unlines (drawMaze defaultMazeGraphics $ generateMaze (generateMazeGrid 15 10) 0 0 (randomList (mkStdGen 6969) (0, 11))) 
+test :: (Int, Int) -> IO ()
+test (width, height) = putStr $ unlines (drawMaze defaultMazeGraphics $ generateMaze (generateMazeGrid width height) 0 0 (randomList (mkStdGen 6969) (0, 11))) 
