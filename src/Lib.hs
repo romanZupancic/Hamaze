@@ -101,27 +101,41 @@ data MazeGraphics = MazeGraphics { gridCornerGraphic :: String
 defaultMazeGraphics :: MazeGraphics
 defaultMazeGraphics = MazeGraphics "#" "===" "|" "   "
 
-drawMaze :: MazeGraphics -> MazeGrid -> [String]
-drawMaze MazeGraphics{ gridCornerGraphic = gcg
+drawMaze :: (MazeCell -> [String]) -> MazeGrid -> [String]
+drawMaze drawCell mazeGrid = foldr1 (++) $ trimmedRows
+    where
+        rows = map (drawRow . (map info)) (gridContents mazeGrid)
+        trimmedRows = head rows : (tailEach (tail rows))
+        drawRow :: [MazeCell] -> [String]
+        drawRow row = foldr1 (parallelConcat) $ trimmedCols
+            where
+                drawnCells  = map (drawCell) row
+                trimmedCols = head drawnCells : (map (tailEach) (tail drawnCells))
+
+tailEach :: [[a]] -> [[a]]
+tailEach = map (tail)
+
+drawSingleWallCell :: MazeGraphics -> MazeCell -> [String]
+drawSingleWallCell MazeGraphics{ gridCornerGraphic = gcg
                      , gridHorizWallGraphic = ghwg
                      , gridVertiWallGraphic = gvwg
                      , gridSpaceGraphic = gsg
-                     } mazeGrid = foldr1 (++) $ map (drawRow . (map info)) (gridContents mazeGrid)
-    where
-        drawRow :: [MazeCell] -> [String]
-        drawRow row = foldr1 (parallelConcat) $ map (drawCell) row
-        drawCell :: MazeCell -> [String]
-        drawCell MazeCell { leftWall = lw
-                          , topWall = tw
-                          , rightWall = rw
-                          , bottomWall = bw
-                          } = [if tw then gcg ++ ghwg ++ gcg else gcg ++ gsg ++ gcg,
-                               (if lw then gvwg else " ") ++ gsg ++ (if rw then gvwg else " "),
-                               if bw then gcg ++ ghwg ++ gcg else gcg ++ gsg ++ gcg]
+                     }
+               MazeCell { leftWall = lw
+                        , topWall = tw
+                        , rightWall = rw
+                        , bottomWall = bw
+                        } = [if tw then gcg ++ ghwg ++ gcg else gcg ++ gsg ++ gcg,
+                            (if lw then gvwg else " ") ++ gsg ++ (if rw then gvwg else " "),
+                            if bw then gcg ++ ghwg ++ gcg else gcg ++ gsg ++ gcg]
+
+drawSingleWallMaze :: MazeGrid -> [String]
+drawSingleWallMaze = drawMaze (drawSingleWallCell defaultMazeGraphics)
 
 parallelConcat :: [[a]] -> [[a]] -> [[a]]
 parallelConcat (v:vs) (u:us) = (v ++ u) : parallelConcat vs us
-parallelConcat _ _ = []
+parallelConcat vs [] = vs
+parallelConcat [] us = us
 
-test :: (Int, Int) -> IO ()
-test (width, height) = putStr $ unlines (drawMaze defaultMazeGraphics $ generateMaze (generateMazeGrid width height) 0 0 (randomList (mkStdGen 6969) (0, 11))) 
+fetchMaze :: (Int, Int) -> IO ()
+fetchMaze (width, height) = putStr $ unlines (drawSingleWallMaze $ generateMaze (generateMazeGrid width height) 0 0 (randomList (mkStdGen 42069) (0, 11))) 
