@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import MazeGen
 
 main :: IO ()
-main = someFunc
+main = print "hello"
