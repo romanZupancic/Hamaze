@@ -1,5 +1,9 @@
 module Main where
 
-main :: IO ()
-main = putStrLn "hello"
+import System.Environment ( getArgs )
+import CmdArgs ( parseArgs )
 
+main :: IO ()
+main = do
+    args <- getArgs
+    parseArgs
