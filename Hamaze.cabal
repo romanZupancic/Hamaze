@@ -22,8 +22,8 @@ executable Hamaze
     hs-source-dirs:   app
     main-is:          Main.hs
     other-modules:    CmdArgs
-    build-depends:
-      Hamaze
+    build-depends: Hamaze
+                 , random
 
 library
     import: build

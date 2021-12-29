@@ -1,4 +1,9 @@
-module MazeGen where
+module MazeGen ( genMazeFromScratch
+               , MazeCell (..)
+               , GridCell (..)
+               , Grid (..)
+               , MazeGrid
+               ) where
 
 import System.Random
 
@@ -118,3 +123,6 @@ reorder items (x:xs) = (items !! extractIndex) : reorder remainingItems xs
     where
         extractIndex = x `mod` (length items)
         remainingItems = [ele | (idx, ele) <- zip [0..] items, idx /= extractIndex]
+
+genMazeFromScratch :: (Int, Int) -> StdGen -> MazeGrid
+genMazeFromScratch dim gen = generateMaze (generateMazeGrid dim) (0,0) (genRandomList gen (0, 11))

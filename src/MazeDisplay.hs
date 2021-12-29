@@ -1,4 +1,4 @@
-module MazeDisplay where
+module MazeDisplay ( drawSingleWallMaze ) where
 
 import MazeGen
 
