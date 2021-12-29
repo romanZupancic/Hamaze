@@ -10,7 +10,6 @@ copyright: 2021 Roman Zupancic
 
 extra-source-files:
     README.md
-    CHANGELOG.md
 
 common build
     default-language: Haskell2010
