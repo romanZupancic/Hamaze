@@ -1,5 +1,4 @@
-module CmdArgs ( usage
-               , parseArgs
+module CmdArgs ( interpretArgs
                , HamazeParse (..)
                ) where
 
@@ -7,9 +6,7 @@ import System.Console.GetOpt ( getOpt
                              , usageInfo
                              , ArgOrder ( Permute )
                              , OptDescr ( Option )
-                             , ArgDescr ( ReqArg
-                                        , OptArg
-                                        )
+                             , ArgDescr ( ReqArg )
                              )
 
 data HamazeParse = HamazeDim (Maybe (Int, Int))
@@ -22,10 +19,7 @@ hamazeArgs = [ Option "d" ["dimensions"]
                        ) "Integer x Integer")
                "The dimensions of the maze to generate, in nxn format."
              , Option "s" ["seed"]
-               (OptArg (\s -> HamazeSeed $ case s of
-                               Nothing -> Nothing
-                               Just str -> toInt str
-                       ) "Integer")
+               (ReqArg (\s -> HamazeSeed $ toInt s) "Single Integer")
                "The seed to use to generate the maze"
              ]
 
@@ -34,6 +28,21 @@ parseArgs = getOpt Permute hamazeArgs
 
 usage :: String
 usage = usageInfo "Usage: hamaze [OPTION...]" hamazeArgs
+
+interpretArgs :: [String] -> Either String [HamazeParse] 
+interpretArgs strs = case parseArgs strs of
+                         ([], _, []) -> Left usage
+                         (a, _, []) -> validateArgs a
+                         (_, _, errs) -> Left (concat errs ++ usage)
+    where
+        validateArgs :: [HamazeParse] -> Either String [HamazeParse]
+        validateArgs [] = Right []
+        validateArgs (x:xs) = do
+            other <- validateArgs xs
+            fmap (:other) (inspectArg x) 
+        inspectArg (HamazeSeed Nothing) = Left "The seed must be an integer (e.g. '-s 123')."
+        inspectArg (HamazeDim Nothing) = Left "The dimensions must be given in an nxn format (e.g. for a 5 by 3 maze, '-d 5x3')"
+        inspectArg correct = Right correct
 
 splitOn :: Eq a => a  -> [a] -> [[a]] 
 splitOn chr (x:xs) =

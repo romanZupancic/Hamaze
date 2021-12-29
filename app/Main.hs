@@ -1,9 +1,11 @@
 module Main where
 
 import System.Environment ( getArgs )
-import CmdArgs ( parseArgs )
+import CmdArgs ( interpretArgs
+               , HamazeParse (..)
+               )
 
 main :: IO ()
 main = do
     args <- getArgs
-    parseArgs
+    print $ interpretArgs args

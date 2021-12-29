@@ -17,20 +17,19 @@ common build
     ghc-options: -Wall
     build-depends: base ^>= 4.14.3.0
 
+executable Hamaze
+    import: build
+    hs-source-dirs:   app
+    main-is:          Main.hs
+    other-modules:    CmdArgs
+    build-depends:
+      Hamaze
+
 library
     import: build
+    hs-source-dirs: src
     exposed-modules: 
       MazeGen,
       MazeDisplay
-    hs-source-dirs: src
     build-depends: random
-
-executable Hamaze
-    import: build
-    main-is:          Main.hs
-    other-modules:    CmdArgs
-    hs-source-dirs:   app
-    default-language: Haskell2010
-    build-depends:
-      Hamaze
 
