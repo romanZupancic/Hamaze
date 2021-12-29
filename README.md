@@ -5,13 +5,13 @@ A simple command line maze generator written in Haskell!
 ## Motivation
 
 This project implements a
-[https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_depth-first_search](randomized
-depth first search) algorithm to generate a maze; the algorithm itself
-is fairly simple, but is ususally described in a general manner and
-around iterative language concepts. In developing this project, I
-wanted to discover the differences between reading an algorithm
-described iteratively and then implementing it in a pure functional
-language.
+[randomized depth first
+search](https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_depth-first_search)
+algorithm to generate a maze; the algorithm itself is fairly simple,
+but is ususally described in a general manner and around iterative
+language concepts. In developing this project, I wanted to discover
+the differences between reading an algorithm described iteratively and
+then implementing it in a pure functional language.
 
 Specific pain points I discovered was in translating sequences of
 steps into compositions of functions: particularly interesting was
